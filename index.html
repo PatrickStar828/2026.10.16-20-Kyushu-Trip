@@ -50,6 +50,8 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .app-card { box-shadow: 0 8px 20px rgba(245, 124, 0, 0.12); }
+    .handle { cursor: grab; }
+    .handle:active { cursor: grabbing; }
   </style>
 </head>
 <body class="bg-brand-bg text-gray-800 antialiased min-h-screen flex justify-center">
@@ -104,35 +106,38 @@
           </div>
         </div>
 
-        <div class="flex justify-between items-center mb-3">
-          <span class="text-xs font-bold text-gray-500">篩選分類：</span>
-          <select v-model="filterCategory" class="bg-white text-xs border border-orange-200 rounded-lg px-3 py-1.5 font-bold text-brand-orangeDark outline-none shadow-sm">
-            <option value="全部">全部行程</option>
-            <option value="景點">🎡 景點</option>
-            <option value="美食">🍜 美食</option>
-            <option value="住宿">🏨 住宿</option>
-            <option value="購物">🛍️ 購物</option>
-            <option value="航班">✈️ 航班</option>
-            <option value="其他">📌 其他</option>
-          </select>
-        </div>
-
         <div id="itinerary-list" class="space-y-3">
           <div 
-            v-for="(item, idx) in filteredItinerary" 
+            v-for="(item, idx) in currentItinerary" 
             :key="item.id" 
             :data-id="item.id"
             class="bg-white rounded-2xl p-4 border border-orange-100 app-card relative transition-all"
           >
-            <div v-if="idx > 0" class="absolute -top-3 left-6 z-20 bg-brand-sky text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow">
-              <i :class="item.transitIcon || 'fa-solid fa-car'"></i>
-              <span>約 {{ item.transitTime || '20分' }}</span>
-            </div>
+            <!-- 上景點至下景點交通時間與 Google 地圖規劃路線 -->
+            <a 
+              v-if="idx > 0" 
+              :href="getRouteUrl(currentItinerary[idx - 1], item)"
+              target="_blank"
+              class="absolute -top-3 left-6 z-20 bg-brand-sky text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow hover:bg-sky-500 transition"
+            >
+              <i :class="item.transitIcon || 'fa-solid fa-route'"></i>
+              <span>路線規劃：約 {{ item.transitTime || '20分' }}</span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-[8px] ml-0.5"></i>
+            </a>
 
-            <div v-if="item.category === '航班'" class="bg-gradient-to-br from-orange-500 to-amber-600 text-white p-3 rounded-xl">
+            <!-- 航班卡片專用樣式 -->
+            <div v-if="item.category === '航班'" class="bg-gradient-to-br from-orange-500 to-amber-600 text-white p-3 rounded-xl relative">
               <div class="flex justify-between items-center border-b border-orange-300 pb-2 mb-2">
                 <span class="font-bold text-sm">✈️ 星宇航空 JX316</span>
-                <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full">去程號</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full">去程號</span>
+                  <button @click="openEditModal(item)" class="text-white opacity-80 hover:opacity-100 p-1">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <button class="handle text-white opacity-80 hover:opacity-100 p-1">
+                    <i class="fa-solid fa-bars"></i>
+                  </button>
+                </div>
               </div>
               <div class="flex justify-between items-center text-center">
                 <div>
@@ -147,7 +152,8 @@
               </div>
             </div>
 
-            <div v-else>
+            <!-- 一般景點/行程卡片 -->
+            <div v-else class="flex flex-col gap-2">
               <div class="flex justify-between items-start">
                 <div class="flex items-center gap-2">
                   <span class="text-xs px-2 py-0.5 rounded-md font-bold" :class="getCategoryBadgeClass(item.category)">
@@ -155,24 +161,45 @@
                   </span>
                   <h3 class="font-extrabold text-base text-gray-800">{{ item.title }}</h3>
                 </div>
-                <button @click="openEditModal(item)" class="text-gray-400 hover:text-brand-orange p-1">
-                  <i class="fa-solid fa-pen-to-square"></i>
-                </button>
+                <div class="flex items-center gap-1">
+                  <button @click="openEditModal(item)" class="text-gray-400 hover:text-brand-orange p-1">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <!-- 拖曳排序按鈕 -->
+                  <button class="handle text-gray-400 hover:text-brand-orange p-1" title="按住並拉動以排序">
+                    <i class="fa-solid fa-bars"></i>
+                  </button>
+                </div>
               </div>
 
-              <div class="mt-2 text-xs space-y-1 text-gray-600">
-                <p v-if="item.time" class="flex items-center gap-1">
-                  <i class="fa-regular fa-clock text-brand-orange"></i> 營業時間：{{ item.time }}
-                </p>
-                <p v-if="item.ticket" class="flex items-center gap-1">
-                  <i class="fa-solid fa-ticket text-brand-grass"></i> 門票費用：{{ item.ticket }}
-                </p>
-                <p v-if="item.note" class="text-gray-500 bg-orange-50/50 p-2 rounded-lg mt-1 border border-orange-100">
-                  💡 {{ item.note }}
-                </p>
+              <!-- 左上角景點照片與特色簡介區 -->
+              <div class="flex gap-3 mt-1">
+                <div class="w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-orange-50 border border-orange-100">
+                  <img 
+                    :src="getSpotImage(item.title)" 
+                    :alt="item.title"
+                    class="w-full h-full object-cover"
+                    onerror="this.src='https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=300'"
+                  >
+                </div>
+                <div class="flex-1 text-xs space-y-1 text-gray-600">
+                  <p v-if="item.desc" class="text-gray-700 font-medium line-clamp-2">
+                    🌟 <span class="font-bold">景點特色：</span>{{ item.desc }}
+                  </p>
+                  <p v-if="item.time" class="flex items-center gap-1 text-[11px]">
+                    <i class="fa-regular fa-clock text-brand-orange"></i> 營業時間：{{ item.time }}
+                  </p>
+                  <p v-if="item.ticket" class="flex items-center gap-1 text-[11px]">
+                    <i class="fa-solid fa-ticket text-brand-grass"></i> 門票費用：{{ item.ticket }}
+                  </p>
+                </div>
               </div>
 
-              <div class="mt-3 flex justify-end">
+              <p v-if="item.note" class="text-xs text-gray-500 bg-orange-50/50 p-2 rounded-lg border border-orange-100 mt-1">
+                💡 {{ item.note }}
+              </p>
+
+              <div class="mt-1 flex justify-end">
                 <a 
                   :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(item.title)" 
                   target="_blank"
@@ -251,7 +278,7 @@
           </h2>
 
           <div v-for="hotel in hotels" :key="hotel.day" class="bg-white rounded-2xl overflow-hidden app-card border border-orange-100">
-            <img :src="hotel.img" class="w-full h-32 object-cover" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500'">
+            <img :src="hotel.img" class="w-full h-36 object-cover" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500'">
             <div class="p-4">
               <span class="bg-orange-100 text-brand-orangeDark text-[10px] font-bold px-2 py-0.5 rounded-full">{{ hotel.day }}</span>
               <h3 class="font-bold text-sm text-gray-800 mt-1">{{ hotel.name }}</h3>
@@ -281,7 +308,7 @@
         </div>
       </section>
 
-      <!-- ================= 頁面 3: 購物清單 (購物籃 ICON) ================= -->
+      <!-- ================= 頁面 3: 購物清單 ================= -->
       <section v-if="currentTab === 'shopping'" class="space-y-4">
         
         <!-- 各大商店 Coupon 區塊 -->
@@ -341,13 +368,17 @@
           </div>
         </div>
 
+        <div v-if="shoppingList.length === 0" class="text-center py-12 text-xs text-gray-400">
+          購物清單為空，點擊右下角「+」新增想買的物品
+        </div>
+
         <!-- 右下角新增 "+" ICON -->
         <button @click="openAddShoppingModal" class="fixed bottom-20 right-6 bg-brand-orange text-white w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg hover:scale-110 active:scale-95 transition-all z-20">
           <i class="fa-solid fa-plus"></i>
         </button>
       </section>
 
-      <!-- ================= 頁面 4: 匯率與記帳 (鈔票 ICON) ================= -->
+      <!-- ================= 頁面 4: 匯率與記帳 ================= -->
       <section v-if="currentTab === 'accounting'" class="space-y-4">
         
         <!-- 即時匯率換算 -->
@@ -445,13 +476,11 @@
         <span class="text-[10px] font-bold mt-1">航班住宿</span>
       </button>
 
-      <!-- 購物清單 (購物籃 ICON) -->
       <button @click="currentTab = 'shopping'" :class="currentTab === 'shopping' ? 'text-brand-orange scale-105' : 'text-gray-400'" class="flex flex-col items-center transition-all">
         <i class="fa-solid fa-basket-shopping text-lg"></i>
         <span class="text-[10px] font-bold mt-1">購物</span>
       </button>
 
-      <!-- 匯率與記帳 (鈔票 ICON) -->
       <button @click="currentTab = 'accounting'" :class="currentTab === 'accounting' ? 'text-brand-orange scale-105' : 'text-gray-400'" class="flex flex-col items-center transition-all">
         <i class="fa-solid fa-money-bill-wave text-lg"></i>
         <span class="text-[10px] font-bold mt-1">記帳</span>
@@ -475,6 +504,10 @@
         <div>
           <label class="text-xs font-bold text-gray-500">名稱</label>
           <input v-model="modalForm.title" class="w-full text-xs border rounded-lg p-2 mt-1">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-gray-500">景點特色簡介</label>
+          <input v-model="modalForm.desc" placeholder="簡短特色介紹" class="w-full text-xs border rounded-lg p-2 mt-1">
         </div>
         <div v-if="['景點','住宿','美食','購物'].includes(modalForm.category)">
           <label class="text-xs font-bold text-gray-500">營業時間</label>
@@ -504,7 +537,7 @@
         <h3 class="font-bold text-base text-gray-800">{{ isShoppingEdit ? '編輯購物項目' : '新增購物項目' }}</h3>
         <div>
           <label class="text-xs font-bold text-gray-500">商品名稱</label>
-          <input v-model="shoppingForm.name" placeholder="例：一蘭拉麵泡麵組" class="w-full text-xs border rounded-lg p-2 mt-1">
+          <input v-model="shoppingForm.name" placeholder="例：藥妝伴手禮" class="w-full text-xs border rounded-lg p-2 mt-1">
         </div>
         <div>
           <label class="text-xs font-bold text-gray-500">單價 (日幣 JPY)</label>
@@ -549,7 +582,7 @@
 
         <div>
           <label class="text-xs font-bold text-gray-500">名稱</label>
-          <input v-model="expenseForm.name" placeholder="例：日田燒麵" class="w-full text-xs border rounded-lg p-2 mt-1">
+          <input v-model="expenseForm.name" placeholder="項目名稱" class="w-full text-xs border rounded-lg p-2 mt-1">
         </div>
 
         <div>
@@ -626,38 +659,34 @@
       }
     };
 
-    // 初始預設行程資料
+    // 依據需求調整 Day 2 的預設行程與餐點
     const defaultItineraries = [
       [
-        { id: '101', category: '航班', title: '星宇航空 JX316 飛往熊本', transitTime: '', transitIcon: '' },
-        { id: '102', category: '住宿', title: 'ANA Crowne Plaza 熊本新天空全日空皇冠假日酒店', time: '24小時', ticket: '無', note: '晚餐：日式餐盒', transitTime: '40分', transitIcon: 'fa-solid fa-bus' }
+        { id: '101', category: '航班', title: '星宇航空 JX316 飛往熊本', desc: '搭乘星宇航空由台中直飛熊本空港', time: '15:00-18:15', ticket: '包含於團費', note: '晚餐：日式餐盒', transitTime: '', transitIcon: '' },
+        { id: '102', category: '住宿', title: 'ANA Crowne Plaza 熊本新天空全日空皇冠假日酒店', desc: '專車接送至飯店休息備戰明日行程', time: '24小時', ticket: '包含於團費', note: '晚餐：日式餐盒', transitTime: '40分', transitIcon: 'fa-solid fa-bus' }
       ],
       [
-        { id: '201', category: '景點', title: '佐賀城本丸御殿、鯱之門', time: '09:00-18:00', ticket: '免費', note: '入內參觀', transitTime: '60分', transitIcon: 'fa-solid fa-bus' },
-        { id: '202', category: '景點', title: '日田豆田町散策', time: '全天開放', ticket: '無', note: '午餐：日田用當地料理', transitTime: '45分', transitIcon: 'fa-solid fa-car' },
-        { id: '203', category: '景點', title: '別府特色溫泉巡禮（海地獄、灶地獄）', time: '08:00-17:00', ticket: '約 2,000 日圓', note: '晚餐：溫泉飯店豪華自助餐', transitTime: '50分', transitIcon: 'fa-solid fa-bus' }
+        { id: '201', category: '景點', title: '熊本城', desc: '日本三大名城之一，感受歷史底蘊與浩瀚城牆', time: '09:00-17:00', ticket: '包含於團費', note: '早餐：飯店內用', transitTime: '15分', transitIcon: 'fa-solid fa-bus' },
+        { id: '202', category: '景點', title: '阿蘇草千里', desc: '欣賞阿蘇地區國家名勝天然紀念物的大草原景觀', time: '全天開放', ticket: '免費參觀', note: '午餐：阿蘇風味餐', transitTime: '50分', transitIcon: 'fa-solid fa-bus' },
+        { id: '203', category: '住宿', title: '温泉杉乃井ホテル虹館', desc: '別府知名溫泉飯店，享用奢華自助餐與露天溫泉', time: '入住15:00後', ticket: '包含於團費', note: '晚餐：溫泉飯店豪華自助餐', transitTime: '90分', transitIcon: 'fa-solid fa-bus' }
       ],
       [
-        { id: '301', category: '景點', title: '九州自然動物園', time: '09:00-16:30', ticket: '2,600 日圓', note: '體驗叢林巴士', transitTime: '30分', transitIcon: 'fa-solid fa-bus' },
-        { id: '302', category: '景點', title: '湯布院藝術小鎮（金鱗湖森林小徑）', time: '全天開放', ticket: '無', note: '午餐：湯布院蒸籠料理', transitTime: '40分', transitIcon: 'fa-solid fa-car' }
+        { id: '301', category: '景點', title: '九州自然動物園', desc: '預計搭乘「叢林巴士」近距離餵食與接觸野生動物', time: '09:00-16:30', ticket: '包含於團費', note: '若現場無法搭乘退費¥1000', transitTime: '30分', transitIcon: 'fa-solid fa-bus' },
+        { id: '302', category: '景點', title: '湯布院藝術小鎮', desc: '漫步充滿浪漫氛圍的溫泉小鎮，特別贈送醬油布丁', time: '全天開放', ticket: '免費散策', note: '午餐：湯布院蒸籠料理 (2500¥)', transitTime: '35分', transitIcon: 'fa-solid fa-bus' },
+        { id: '303', category: '景點', title: '金鱗湖森林小徑', desc: '欣賞湖光山色與夢幻仙境般的晨霧湖景', time: '全天開放', ticket: '免費', note: '漫步於森林步道', transitTime: '10分', transitIcon: 'fa-solid fa-person-walking' },
+        { id: '304', category: '住宿', title: '福岡蒙特埃馬納酒店', desc: '位於福岡市中心渡邊通，交通便利購物首選', time: '入住15:00後', ticket: '包含於團費', note: '晚餐：長腳蟹放題+酒水暢飲 (5500¥)', transitTime: '90分', transitIcon: 'fa-solid fa-bus' }
       ],
       [
-        { id: '401', category: '景點', title: '福岡巨蛋', time: '外觀拍照', ticket: '無', note: '拍照打卡景點', transitTime: '20分', transitIcon: 'fa-solid fa-bus' },
-        { id: '402', category: '景點', title: '福岡塔展望台', time: '09:30-22:00', ticket: '800 日圓', note: '鳥瞰福岡市區', transitTime: '15分', transitIcon: 'fa-solid fa-car' },
-        { id: '403', category: '購物', title: '三井 LALAPORT（1:1 巨型鋼彈）', time: '10:00-21:00', ticket: '無', note: '晚餐：長腳蟹放題 + 酒水暢飲', transitTime: '30分', transitIcon: 'fa-solid fa-bus' }
+        { id: '401', category: '景點', title: '福岡巨蛋', desc: '日本職棒福岡軟銀鷹主場，外觀氣勢磅礡', time: '外觀開放', ticket: '免費', note: '外觀拍照留念', transitTime: '20分', transitIcon: 'fa-solid fa-bus' },
+        { id: '402', category: '景點', title: '福岡塔展望台', desc: '登頂日本最高海濱塔，360度俯瞰福岡市景與博多灣', time: '09:30-22:00', ticket: '包含於團費', note: '鳥瞰福岡美麗海岸線', transitTime: '10分', transitIcon: 'fa-solid fa-bus' },
+        { id: '403', category: '景點', title: '一蘭之森博物館', desc: '了解知名一蘭拉麵歷史脈絡並品嚐最道地豚骨拉麵', time: '10:00-16:00', ticket: '免費參觀', note: '午餐：日式拉麵餐 (1500¥)', transitTime: '30分', transitIcon: 'fa-solid fa-bus' },
+        { id: '404', category: '購物', title: '三井 LALAPORT', desc: '參觀 1:1 實體大巨型鋼彈模型，複合式商場自由購物', time: '10:00-21:00', ticket: '免費購物', note: '晚餐：日式燒肉放題 (3000¥)', transitTime: '25分', transitIcon: 'fa-solid fa-bus' }
       ],
       [
-        { id: '501', category: '景點', title: '太宰府天滿宮', time: '06:30-19:00', ticket: '免費', note: '贈送當地名物梅枝餅', transitTime: '35分', transitIcon: 'fa-solid fa-bus' },
-        { id: '502', category: '景點', title: '柳川遊船', time: '09:00-17:00', ticket: '約 1,500 日圓', note: '九州小威尼斯體驗', transitTime: '50分', transitIcon: 'fa-solid fa-car' }
+        { id: '501', category: '景點', title: '太宰府天滿宮', desc: '祭祀日本學問之神菅原道真，贈送當地名物梅枝餅', time: '06:30-19:00', ticket: '免費參觀', note: '特別贈送梅枝餅乙個', transitTime: '30分', transitIcon: 'fa-solid fa-bus' },
+        { id: '502', category: '景點', title: '太宰府觀光列車', desc: '搭乘特色「旅人列車」，體驗獨特日式觀光風情', time: '依班次運行', ticket: '包含於團費', note: '若遇檢修運休改巴士並退費', transitTime: '15分', transitIcon: 'fa-solid fa-train' },
+        { id: '503', category: '景點', title: '柳川遊船', desc: '乘坐傳統木舟沿著護城河，體驗九州小威尼斯水鄉', time: '09:00-17:00', ticket: '包含於團費', note: '午餐：鰻魚飯定食 (2500¥)', transitTime: '45分', transitIcon: 'fa-solid fa-bus' }
       ]
-    ];
-
-    const defaultShopping = [
-
-    ];
-
-    const defaultExpenses = [
-
     ];
 
     const { createApp, ref, computed, onMounted, nextTick } = Vue;
@@ -666,7 +695,6 @@
       setup() {
         const currentTab = ref('itinerary');
         const selectedDayIndex = ref(0);
-        const filterCategory = ref('全部');
         const exchangeRate = ref(0.215);
         const calcJpy = ref('');
 
@@ -690,15 +718,53 @@
         });
 
         const hotels = [
-          { day: 'Day 1', name: 'ANA Crowne Plaza 熊本新天空全日空皇冠假日酒店', address: '2 Higashiamidaji-machi Chuo-ku Kumamoto', url: 'https://www.ihg.com', img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500' },
-          { day: 'Day 2', name: '龜之井酒店 別府 (亀の井ホテル 別府)', address: '5-17 Chūōmachi, Beppu, Oita', url: 'https://kamenoi-hotels.com', img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=500' },
-          { day: 'Day 3 & Day 4', name: '福岡蒙特埃馬納酒店 (Hotel Monte Hermana Fukuoka)', address: '3 Chome-4-24 Watanabedori, Chuo Ward, Fukuoka', url: 'https://www.monte-hermana.jp', img: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=500' }
+          { 
+            day: 'Day 1', 
+            name: 'ANA Crowne Plaza 熊本新天空全日空皇冠假日酒店', 
+            address: '2 Higashiamidaji-machi Chuo-ku Kumamoto', 
+            url: 'https://www.ihg.com/crowneplaza/hotels/tw/zh/kumamoto/kmjja/hoteldetail', 
+            img: 'ANA Crowne Plaza 熊本新天空全日空皇冠假日酒店.jpg' 
+          },
+          { 
+            day: 'Day 2', 
+            name: '温泉杉乃井ホテル虹館', 
+            address: '日本〒874-0823 Oita, Beppu, 観海寺1', 
+            url: 'https://suginoi.orixhotelsandresorts.com/contents/nijikan/', 
+            img: '温泉杉乃井ホテル虹館.jpg' 
+          },
+          { 
+            day: 'Day 3 & Day 4', 
+            name: '福岡蒙特埃馬納酒店 (Hotel Monte Hermana Fukuoka)', 
+            address: '3 Chome-4-24 Watanabedori, Chuo Ward, Fukuoka', 
+            url: 'https://www.monte-hermana.jp/cn/fukuoka/', 
+            img: '福岡蒙特埃馬納酒店.jpg' 
+          }
         ];
 
         const itineraries = ref([[], [], [], [], []]);
         const coupons = ref([]);
         const shoppingList = ref([]);
         const expenses = ref([]);
+
+        const initSortable = () => {
+          nextTick(() => {
+            const el = document.getElementById('itinerary-list');
+            if (el && typeof Sortable !== 'undefined') {
+              if (el._sortable) el._sortable.destroy();
+              el._sortable = Sortable.create(el, {
+                animation: 150,
+                handle: '.handle',
+                onEnd: (evt) => {
+                  if (!checkAuth()) return;
+                  const dayList = itineraries.value[selectedDayIndex.value];
+                  const movedItem = dayList.splice(evt.oldIndex, 1)[0];
+                  dayList.splice(evt.newIndex, 0, movedItem);
+                  syncToFirebase();
+                }
+              });
+            }
+          });
+        };
 
         // Firebase 實時監聽與初始化
         onMounted(() => {
@@ -710,32 +776,14 @@
               expenses.value = data.expenses ? Object.values(data.expenses) : [];
               coupons.value = data.coupons ? Object.values(data.coupons) : [];
             } else {
-              // 初次連線若資料庫無資料，預設寫入
               tripRef.set({
                 itineraries: defaultItineraries,
-                shoppingList: defaultShopping,
-                expenses: defaultExpenses,
+                shoppingList: [],
+                expenses: [],
                 coupons: []
               });
             }
-          });
-
-          nextTick(() => {
-            if (typeof Sortable !== 'undefined') {
-              const el = document.getElementById('itinerary-list');
-              if (el) {
-                Sortable.create(el, {
-                  animation: 150,
-                  onEnd: (evt) => {
-                    if (!checkAuth()) return;
-                    const dayList = itineraries.value[selectedDayIndex.value];
-                    const movedItem = dayList.splice(evt.oldIndex, 1)[0];
-                    dayList.splice(evt.newIndex, 0, movedItem);
-                    syncToFirebase();
-                  }
-                });
-              }
-            }
+            initSortable();
           });
         });
 
@@ -745,21 +793,45 @@
 
         const currentDay = computed(() => days[selectedDayIndex.value]);
 
-        const filteredItinerary = computed(() => {
-          const list = itineraries.value[selectedDayIndex.value] || [];
-          if (filterCategory.value === '全部') return list;
-          return list.filter(item => item.category === filterCategory.value);
-        });
+        const currentItinerary = computed(() => itineraries.value[selectedDayIndex.value] || []);
+
+        const getRouteUrl = (fromItem, toItem) => {
+          if (!fromItem || !toItem) return '#';
+          const origin = encodeURIComponent(fromItem.title);
+          const destination = encodeURIComponent(toItem.title);
+          return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
+        };
+
+        const getSpotImage = (title) => {
+          const validImages = [
+            "ANA Crowne Plaza 熊本新天空全日空皇冠假日酒店",
+            "一蘭之森博物館",
+            "九州自然動物園",
+            "三井 LALAPORT",
+            "太宰府天滿宮",
+            "太宰府觀光列車",
+            "別府空中纜車",
+            "温泉杉乃井ホテル虹館",
+            "福岡蒙特埃馬納酒店"
+          ];
+
+          for (const imgName of validImages) {
+            if (title.includes(imgName) || imgName.includes(title)) {
+              return `${imgName}.jpg`;
+            }
+          }
+          return `${title}.jpg`;
+        };
 
         // 行程 Modal 相關
         const showModal = ref(false);
         const isEdit = ref(false);
-        const modalForm = ref({ id: null, category: '景點', title: '', time: '', ticket: '', note: '' });
+        const modalForm = ref({ id: null, category: '景點', title: '', desc: '', time: '', ticket: '', note: '' });
 
         const openAddModal = () => {
           if (!checkAuth()) return;
           isEdit.value = false;
-          modalForm.value = { id: 'item_' + Date.now(), category: '景點', title: '', time: '', ticket: '', note: '' };
+          modalForm.value = { id: 'item_' + Date.now(), category: '景點', title: '', desc: '', time: '', ticket: '', note: '' };
           showModal.value = true;
         };
 
@@ -918,8 +990,9 @@
           days,
           currentDay,
           currentWeather,
-          filterCategory,
-          filteredItinerary,
+          currentItinerary,
+          getRouteUrl,
+          getSpotImage,
           hotels,
           showModal,
           isEdit,
