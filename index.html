@@ -35,6 +35,10 @@
   <!-- SortableJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
+  <!-- Firebase SDKs (v9 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
   <style>
     [v-cloak] { display: none !important; }
     body {
@@ -280,7 +284,7 @@
       <!-- ================= 頁面 3: 購物清單 (購物籃 ICON) ================= -->
       <section v-if="currentTab === 'shopping'" class="space-y-4">
         
-        <!-- 各大商店 Coupon 區塊 (3) -->
+        <!-- 各大商店 Coupon 區塊 -->
         <div class="bg-gradient-to-r from-amber-400 to-orange-400 p-4 rounded-2xl text-white shadow-sm">
           <div class="flex justify-between items-center mb-2">
             <h3 class="font-bold text-sm flex items-center gap-1">
@@ -302,10 +306,10 @@
           </div>
         </div>
 
-        <!-- 購物清單卡片列表 (1) (4) -->
+        <!-- 購物清單卡片列表 -->
         <div class="grid grid-cols-2 gap-3">
           <div 
-            v-for="(item, idx) in shoppingList" 
+            v-for="item in shoppingList" 
             :key="item.id"
             @touchstart="startPress('shopping', item)"
             @touchend="cancelPress"
@@ -337,7 +341,7 @@
           </div>
         </div>
 
-        <!-- 右下角新增 "+" ICON (2) -->
+        <!-- 右下角新增 "+" ICON -->
         <button @click="openAddShoppingModal" class="fixed bottom-20 right-6 bg-brand-orange text-white w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg hover:scale-110 active:scale-95 transition-all z-20">
           <i class="fa-solid fa-plus"></i>
         </button>
@@ -346,7 +350,7 @@
       <!-- ================= 頁面 4: 匯率與記帳 (鈔票 ICON) ================= -->
       <section v-if="currentTab === 'accounting'" class="space-y-4">
         
-        <!-- 即時匯率換算 (2) -->
+        <!-- 即時匯率換算 -->
         <div class="bg-gradient-to-br from-brand-grassLight to-white p-4 rounded-2xl border border-green-200 shadow-sm space-y-3">
           <div class="flex justify-between items-center">
             <span class="text-xs font-extrabold text-green-800 flex items-center gap-1">
@@ -370,7 +374,7 @@
           </div>
         </div>
 
-        <!-- 總花費統計 (3) -->
+        <!-- 總花費統計 -->
         <div class="bg-brand-orange text-white rounded-2xl p-4 shadow-md flex justify-between items-center">
           <div>
             <div class="text-xs opacity-90 font-bold">累積總支出 (日幣)</div>
@@ -382,7 +386,7 @@
           </div>
         </div>
 
-        <!-- 消費紀錄列表 (1) (5) -->
+        <!-- 消費紀錄列表 -->
         <div class="space-y-2">
           <h3 class="font-bold text-sm text-gray-700 flex justify-between items-center">
             <span>消費紀錄列表</span>
@@ -390,7 +394,7 @@
           </h3>
 
           <div 
-            v-for="(record) in expenses" 
+            v-for="record in expenses" 
             :key="record.id"
             @touchstart="startPress('expense', record)"
             @touchend="cancelPress"
@@ -411,7 +415,7 @@
               </div>
             </div>
             <div class="text-right">
-              <div class="font-black text-sm text-gray-800">¥ {{ record.amount.toLocaleString() }}</div>
+              <div class="font-black text-sm text-gray-800">¥ {{ Number(record.amount).toLocaleString() }}</div>
               <div class="text-[10px] text-gray-400">${{ Math.round(record.amount * exchangeRate) }}</div>
             </div>
           </div>
@@ -421,7 +425,7 @@
           </div>
         </div>
 
-        <!-- 右下角新增花費 "+" ICON (4) -->
+        <!-- 右下角新增花費 "+" ICON -->
         <button @click="openAddExpenseModal" class="fixed bottom-20 right-6 bg-brand-orange text-white w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg hover:scale-110 active:scale-95 transition-all z-20">
           <i class="fa-solid fa-plus"></i>
         </button>
@@ -494,7 +498,7 @@
       </div>
     </div>
 
-    <!-- 購物清單編輯 Modal (4) -->
+    <!-- 購物清單編輯 Modal -->
     <div v-if="showShoppingModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-3">
         <h3 class="font-bold text-base text-gray-800">{{ isShoppingEdit ? '編輯購物項目' : '新增購物項目' }}</h3>
@@ -526,7 +530,7 @@
       </div>
     </div>
 
-    <!-- 花費記帳 Modal (1) (5) -->
+    <!-- 花費記帳 Modal -->
     <div v-if="showExpenseModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-3">
         <h3 class="font-bold text-base text-gray-800">{{ isExpenseEdit ? '編輯花費紀錄' : '新增花費紀錄' }}</h3>
@@ -588,6 +592,58 @@
   </div>
 
   <script>
+    // 初始化 Firebase 配置
+    const firebaseConfig = {
+      apiKey: "AIzaSyAqMiD1T6-l-ERC0yNckngfZUz0KxZaIxg",
+      authDomain: "kyushu-trip-2026-3ad86.firebaseapp.com",
+      databaseURL: "https://kyushu-trip-2026-3ad86-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "kyushu-trip-2026-3ad86",
+      storageBucket: "kyushu-trip-2026-3ad86.firebasestorage.app",
+      messagingSenderId: "65520743652",
+      appId: "1:65520743652:web:0f913e139bdc368546a8f1",
+      measurementId: "G-KJXMD2J9HS"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const tripRef = db.ref('kyushu-trip-2026');
+
+    // 初始預設行程資料
+    const defaultItineraries = [
+      [
+        { id: '101', category: '航班', title: '星宇航空 JX316 飛往熊本', transitTime: '', transitIcon: '' },
+        { id: '102', category: '住宿', title: 'ANA Crowne Plaza 熊本新天空全日空皇冠假日酒店', time: '24小時', ticket: '無', note: '晚餐：日式餐盒', transitTime: '40分', transitIcon: 'fa-solid fa-bus' }
+      ],
+      [
+        { id: '201', category: '景點', title: '佐賀城本丸御殿、鯱之門', time: '09:00-18:00', ticket: '免費', note: '入內參觀', transitTime: '60分', transitIcon: 'fa-solid fa-bus' },
+        { id: '202', category: '景點', title: '日田豆田町散策', time: '全天開放', ticket: '無', note: '午餐：日田用當地料理', transitTime: '45分', transitIcon: 'fa-solid fa-car' },
+        { id: '203', category: '景點', title: '別府特色溫泉巡禮（海地獄、灶地獄）', time: '08:00-17:00', ticket: '約 2,000 日圓', note: '晚餐：溫泉飯店豪華自助餐', transitTime: '50分', transitIcon: 'fa-solid fa-bus' }
+      ],
+      [
+        { id: '301', category: '景點', title: '九州自然動物園', time: '09:00-16:30', ticket: '2,600 日圓', note: '體驗叢林巴士', transitTime: '30分', transitIcon: 'fa-solid fa-bus' },
+        { id: '302', category: '景點', title: '湯布院藝術小鎮（金鱗湖森林小徑）', time: '全天開放', ticket: '無', note: '午餐：湯布院蒸籠料理', transitTime: '40分', transitIcon: 'fa-solid fa-car' }
+      ],
+      [
+        { id: '401', category: '景點', title: '福岡巨蛋', time: '外觀拍照', ticket: '無', note: '拍照打卡景點', transitTime: '20分', transitIcon: 'fa-solid fa-bus' },
+        { id: '402', category: '景點', title: '福岡塔展望台', time: '09:30-22:00', ticket: '800 日圓', note: '鳥瞰福岡市區', transitTime: '15分', transitIcon: 'fa-solid fa-car' },
+        { id: '403', category: '購物', title: '三井 LALAPORT（1:1 巨型鋼彈）', time: '10:00-21:00', ticket: '無', note: '晚餐：長腳蟹放題 + 酒水暢飲', transitTime: '30分', transitIcon: 'fa-solid fa-bus' }
+      ],
+      [
+        { id: '501', category: '景點', title: '太宰府天滿宮', time: '06:30-19:00', ticket: '免費', note: '贈送當地名物梅枝餅', transitTime: '35分', transitIcon: 'fa-solid fa-bus' },
+        { id: '502', category: '景點', title: '柳川遊船', time: '09:00-17:00', ticket: '約 1,500 日圓', note: '九州小威尼斯體驗', transitTime: '50分', transitIcon: 'fa-solid fa-car' }
+      ]
+    ];
+
+    const defaultShopping = [
+      { id: 'shop_1', name: '一蘭拉麵泡麵組', price: 2000, img: '' },
+      { id: 'shop_2', name: '熊本熊周邊娃娃', price: 1500, img: '' }
+    ];
+
+    const defaultExpenses = [
+      { id: 'exp_1', category: '飲食', name: '日田燒麵午餐', date: '10/17', amount: 1500, payment: '現金', note: '' },
+      { id: 'exp_2', category: '購物', name: '藥妝店買伴手禮', date: '10/18', amount: 8500, payment: '信用卡', note: '' }
+    ];
+
     const { createApp, ref, computed, onMounted, nextTick } = Vue;
 
     createApp({
@@ -623,30 +679,50 @@
           { day: 'Day 3 & Day 4', name: '福岡蒙特埃馬納酒店 (Hotel Monte Hermana Fukuoka)', address: '3 Chome-4-24 Watanabedori, Chuo Ward, Fukuoka', url: 'https://www.monte-hermana.jp', img: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=500' }
         ];
 
-        const itineraries = ref([
-          [
-            { id: 101, category: '航班', title: '星宇航空 JX316 飛往熊本', transitTime: '', transitIcon: '' },
-            { id: 102, category: '住宿', title: 'ANA Crowne Plaza 熊本新天空全日空皇冠假日酒店', time: '24小時', ticket: '無', note: '晚餐：日式餐盒', transitTime: '40分', transitIcon: 'fa-solid fa-bus' }
-          ],
-          [
-            { id: 201, category: '景點', title: '佐賀城本丸御殿、鯱之門', time: '09:00-18:00', ticket: '免費', note: '入內參觀', transitTime: '60分', transitIcon: 'fa-solid fa-bus' },
-            { id: 202, category: '景點', title: '日田豆田町散策', time: '全天開放', ticket: '無', note: '午餐：日田用當地料理', transitTime: '45分', transitIcon: 'fa-solid fa-car' },
-            { id: 203, category: '景點', title: '別府特色溫泉巡禮（海地獄、灶地獄）', time: '08:00-17:00', ticket: '約 2,000 日圓', note: '晚餐：溫泉飯店豪華自助餐', transitTime: '50分', transitIcon: 'fa-solid fa-bus' }
-          ],
-          [
-            { id: 301, category: '景點', title: '九州自然動物園', time: '09:00-16:30', ticket: '2,600 日圓', note: '體驗叢林巴士', transitTime: '30分', transitIcon: 'fa-solid fa-bus' },
-            { id: 302, category: '景點', title: '湯布院藝術小鎮（金鱗湖森林小徑）', time: '全天開放', ticket: '無', note: '午餐：湯布院蒸籠料理', transitTime: '40分', transitIcon: 'fa-solid fa-car' }
-          ],
-          [
-            { id: 401, category: '景點', title: '福岡巨蛋', time: '外觀拍照', ticket: '無', note: '拍照打卡景點', transitTime: '20分', transitIcon: 'fa-solid fa-bus' },
-            { id: 402, category: '景點', title: '福岡塔展望台', time: '09:30-22:00', ticket: '800 日圓', note: '鳥瞰福岡市區', transitTime: '15分', transitIcon: 'fa-solid fa-car' },
-            { id: 403, category: '購物', title: '三井 LALAPORT（1:1 巨型鋼彈）', time: '10:00-21:00', ticket: '無', note: '晚餐：長腳蟹放題 + 酒水暢飲', transitTime: '30分', transitIcon: 'fa-solid fa-bus' }
-          ],
-          [
-            { id: 501, category: '景點', title: '太宰府天滿宮', time: '06:30-19:00', ticket: '免費', note: '贈送當地名物梅枝餅', transitTime: '35分', transitIcon: 'fa-solid fa-bus' },
-            { id: 502, category: '景點', title: '柳川遊船', time: '09:00-17:00', ticket: '約 1,500 日圓', note: '九州小威尼斯體驗', transitTime: '50分', transitIcon: 'fa-solid fa-car' }
-          ]
-        ]);
+        const itineraries = ref([[], [], [], [], []]);
+        const coupons = ref([]);
+        const shoppingList = ref([]);
+        const expenses = ref([]);
+
+        // Firebase 實時監聽與初始化
+        onMounted(() => {
+          tripRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+              itineraries.value = data.itineraries || defaultItineraries;
+              shoppingList.value = data.shoppingList ? Object.values(data.shoppingList) : [];
+              expenses.value = data.expenses ? Object.values(data.expenses) : [];
+            } else {
+              // 初次連線若資料庫庫無資料，預載設值
+              tripRef.set({
+                itineraries: defaultItineraries,
+                shoppingList: defaultShopping,
+                expenses: defaultExpenses
+              });
+            }
+          });
+
+          nextTick(() => {
+            if (typeof Sortable !== 'undefined') {
+              const el = document.getElementById('itinerary-list');
+              if (el) {
+                Sortable.create(el, {
+                  animation: 150,
+                  onEnd: (evt) => {
+                    const dayList = itineraries.value[selectedDayIndex.value];
+                    const movedItem = dayList.splice(evt.oldIndex, 1)[0];
+                    dayList.splice(evt.newIndex, 0, movedItem);
+                    saveItinerariesToFirebase();
+                  }
+                });
+              }
+            }
+          });
+        });
+
+        const syncToFirebase = () => {
+          tripRef.child('itineraries').set(itineraries.value);
+        };
 
         const currentDay = computed(() => days[selectedDayIndex.value]);
 
@@ -663,7 +739,7 @@
 
         const openAddModal = () => {
           isEdit.value = false;
-          modalForm.value = { id: Date.now(), category: '景點', title: '', time: '', ticket: '', note: '' };
+          modalForm.value = { id: 'item_' + Date.now(), category: '景點', title: '', time: '', ticket: '', note: '' };
           showModal.value = true;
         };
 
@@ -674,13 +750,14 @@
         };
 
         const saveItinerary = () => {
-          const dayList = itineraries.value[selectedDayIndex.value];
+          const dayList = itineraries.value[selectedDayIndex.value] || [];
           if (isEdit.value) {
             const index = dayList.findIndex(i => i.id === modalForm.value.id);
             if (index !== -1) dayList[index] = { ...modalForm.value };
           } else {
             dayList.push({ ...modalForm.value, transitTime: '20分', transitIcon: 'fa-solid fa-car' });
           }
+          syncToFirebase();
           showModal.value = false;
         };
 
@@ -688,24 +765,25 @@
           if (confirm('確定要刪除這個行程嗎？')) {
             const dayList = itineraries.value[selectedDayIndex.value];
             itineraries.value[selectedDayIndex.value] = dayList.filter(i => i.id !== modalForm.value.id);
+            syncToFirebase();
             showModal.value = false;
           }
         };
 
-        // 購物清單相關 (Coupons & Items)
-        const coupons = ref([]);
-        const shoppingList = ref([
-          { id: 1, name: '一蘭拉麵泡麵組', price: 2000, img: '' },
-          { id: 2, name: '熊本熊周邊娃娃', price: 1500, img: '' }
-        ]);
-
+        // 購物清單相關
         const showShoppingModal = ref(false);
         const isShoppingEdit = ref(false);
         const shoppingForm = ref({ id: null, name: '', price: 0, img: '' });
 
         const uploadCoupon = (e) => {
           const file = e.target.files[0];
-          if (file) coupons.value.push(URL.createObjectURL(file));
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              coupons.value.push(evt.target.result);
+            };
+            reader.readAsDataURL(file);
+          }
         };
 
         const removeCoupon = (idx) => {
@@ -714,36 +792,32 @@
 
         const openAddShoppingModal = () => {
           isShoppingEdit.value = false;
-          shoppingForm.value = { id: Date.now(), name: '', price: 0, img: '' };
+          shoppingForm.value = { id: 'shop_' + Date.now(), name: '', price: 0, img: '' };
           showShoppingModal.value = true;
         };
 
         const handleShoppingImgUpload = (e) => {
           const file = e.target.files[0];
-          if (file) shoppingForm.value.img = URL.createObjectURL(file);
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              shoppingForm.value.img = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
         };
 
         const saveShoppingItem = () => {
-          if (isShoppingEdit.value) {
-            const index = shoppingList.value.findIndex(s => s.id === shoppingForm.value.id);
-            if (index !== -1) shoppingList.value[index] = { ...shoppingForm.value };
-          } else {
-            shoppingList.value.push({ ...shoppingForm.value });
-          }
+          tripRef.child('shoppingList').child(shoppingForm.value.id).set(shoppingForm.value);
           showShoppingModal.value = false;
         };
 
         const deleteShoppingItem = () => {
-          shoppingList.value = shoppingList.value.filter(s => s.id !== shoppingForm.value.id);
+          tripRef.child('shoppingList').child(shoppingForm.value.id).remove();
           showShoppingModal.value = false;
         };
 
         // 記帳相關
-        const expenses = ref([
-          { id: 1, category: '飲食', name: '日田燒麵午餐', date: '10/17', amount: 1500, payment: '現金', note: '' },
-          { id: 2, category: '購物', name: '藥妝店買伴手禮', date: '10/18', amount: 8500, payment: '信用卡', note: '' }
-        ]);
-
         const showExpenseModal = ref(false);
         const isExpenseEdit = ref(false);
         const expenseForm = ref({ id: null, category: '飲食', name: '', date: '10/16', amount: 0, payment: '現金', note: '' });
@@ -755,7 +829,7 @@
         const openAddExpenseModal = () => {
           isExpenseEdit.value = false;
           expenseForm.value = {
-            id: Date.now(),
+            id: 'exp_' + Date.now(),
             category: '飲食',
             name: '',
             date: days[selectedDayIndex.value].date,
@@ -767,21 +841,16 @@
         };
 
         const saveExpenseRecord = () => {
-          if (isExpenseEdit.value) {
-            const index = expenses.value.findIndex(e => e.id === expenseForm.value.id);
-            if (index !== -1) expenses.value[index] = { ...expenseForm.value };
-          } else {
-            expenses.value.push({ ...expenseForm.value });
-          }
+          tripRef.child('expenses').child(expenseForm.value.id).set(expenseForm.value);
           showExpenseModal.value = false;
         };
 
         const deleteExpenseRecord = () => {
-          expenses.value = expenses.value.filter(e => e.id !== expenseForm.value.id);
+          tripRef.child('expenses').child(expenseForm.value.id).remove();
           showExpenseModal.value = false;
         };
 
-        // 長按 1 秒手勢邏輯 (用於購物與記帳項目的長按編輯)
+        // 長按 1 秒手勢邏輯
         let pressTimer = null;
         const startPress = (type, item) => {
           cancelPress();
@@ -795,7 +864,7 @@
               expenseForm.value = { ...item };
               showExpenseModal.value = true;
             }
-          }, 1000); // 1000ms = 1秒
+          }, 1000);
         };
 
         const cancelPress = () => {
@@ -814,24 +883,6 @@
             default: return 'bg-gray-100 text-gray-600';
           }
         };
-
-        onMounted(() => {
-          nextTick(() => {
-            if (typeof Sortable !== 'undefined') {
-              const el = document.getElementById('itinerary-list');
-              if (el) {
-                Sortable.create(el, {
-                  animation: 150,
-                  onEnd: (evt) => {
-                    const dayList = itineraries.value[selectedDayIndex.value];
-                    const movedItem = dayList.splice(evt.oldIndex, 1)[0];
-                    dayList.splice(evt.newIndex, 0, movedItem);
-                  }
-                });
-              }
-            }
-          });
-        });
 
         return {
           currentTab,
