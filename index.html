@@ -172,7 +172,7 @@
                 </div>
               </div>
 
-              <!-- 左上角景點照片與特色簡介區 -->
+              <!-- 左上角景點照片與特色簡述 -->
               <div class="flex gap-3 mt-1">
                 <div class="w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-orange-50 border border-orange-100">
                   <img 
@@ -659,33 +659,36 @@
       }
     };
 
-    // 依據需求調整 Day 2 的預設行程與餐點
+    // 依據新附件檔案更新 Day 2 行程與餐點資訊
     const defaultItineraries = [
       [
         { id: '101', category: '航班', title: '星宇航空 JX316 飛往熊本', desc: '搭乘星宇航空由台中直飛熊本空港', time: '15:00-18:15', ticket: '包含於團費', note: '晚餐：日式餐盒', transitTime: '', transitIcon: '' },
         { id: '102', category: '住宿', title: 'ANA Crowne Plaza 熊本新天空全日空皇冠假日酒店', desc: '專車接送至飯店休息備戰明日行程', time: '24小時', ticket: '包含於團費', note: '晚餐：日式餐盒', transitTime: '40分', transitIcon: 'fa-solid fa-bus' }
       ],
       [
-        { id: '201', category: '景點', title: '熊本城', desc: '日本三大名城之一，感受歷史底蘊與浩瀚城牆', time: '09:00-17:00', ticket: '包含於團費', note: '早餐：飯店內用', transitTime: '15分', transitIcon: 'fa-solid fa-bus' },
-        { id: '202', category: '景點', title: '阿蘇草千里', desc: '欣賞阿蘇地區國家名勝天然紀念物的大草原景觀', time: '全天開放', ticket: '免費參觀', note: '午餐：阿蘇風味餐', transitTime: '50分', transitIcon: 'fa-solid fa-bus' },
-        { id: '203', category: '住宿', title: '温泉杉乃井ホテル虹館', desc: '別府知名溫泉飯店，享用奢華自助餐與露天溫泉', time: '入住15:00後', ticket: '包含於團費', note: '晚餐：溫泉飯店豪華自助餐', transitTime: '90分', transitIcon: 'fa-solid fa-bus' }
+        { id: '201', category: '景點', title: '熊本城', desc: '入內參觀日本三大名城之一，感受歷史底蘊。', time: '09:00-17:00', ticket: '包含於團費', note: '早餐：飯店內用', transitTime: '15分', transitIcon: 'fa-solid fa-bus' },
+        { id: '202', category: '景點', title: '櫻之馬場・城彩苑', desc: '重現江戶時代城下町風情，漫步「櫻之小路」。', time: '09:00-19:00', ticket: '免費散策', note: '漫步體驗城下町街景', transitTime: '5分', transitIcon: 'fa-solid fa-person-walking' },
+        { id: '203', category: '景點', title: '草千里之濱', desc: '欣賞阿蘇地區國家名勝天然紀念物的大草原景觀。', time: '全天開放', ticket: '免費參觀', note: '午餐：阿蘇風味餐 (2500¥)', transitTime: '50分', transitIcon: 'fa-solid fa-bus' },
+        { id: '204', category: '景點', title: '別府空中纜車', desc: '搭乘纜車登上鶴見岳（海拔1370公尺），俯瞰別府灣全景。', time: '09:00-17:00', ticket: '包含於團費', note: '搭乘纜車遠眺別府灣景色', transitTime: '75分', transitIcon: 'fa-solid fa-bus' },
+        { id: '205', category: '住宿', title: '温泉杉乃井ホテル虹館 (別府溫泉鄉)', desc: '抵達別府溫泉飯店，享用晚餐與泡湯體驗。', time: '入住15:00後', ticket: '包含於團費', note: '晚餐：溫泉飯店豪華自助餐', transitTime: '20分', transitIcon: 'fa-solid fa-bus' }
       ],
       [
-        { id: '301', category: '景點', title: '九州自然動物園', desc: '預計搭乘「叢林巴士」近距離餵食與接觸野生動物', time: '09:00-16:30', ticket: '包含於團費', note: '若現場無法搭乘退費¥1000', transitTime: '30分', transitIcon: 'fa-solid fa-bus' },
-        { id: '302', category: '景點', title: '湯布院藝術小鎮', desc: '漫步充滿浪漫氛圍的溫泉小鎮，特別贈送醬油布丁', time: '全天開放', ticket: '免費散策', note: '午餐：湯布院蒸籠料理 (2500¥)', transitTime: '35分', transitIcon: 'fa-solid fa-bus' },
-        { id: '303', category: '景點', title: '金鱗湖森林小徑', desc: '欣賞湖光山色與夢幻仙境般的晨霧湖景', time: '全天開放', ticket: '免費', note: '漫步於森林步道', transitTime: '10分', transitIcon: 'fa-solid fa-person-walking' },
-        { id: '304', category: '住宿', title: '福岡蒙特埃馬納酒店', desc: '位於福岡市中心渡邊通，交通便利購物首選', time: '入住15:00後', ticket: '包含於團費', note: '晚餐：長腳蟹放題+酒水暢飲 (5500¥)', transitTime: '90分', transitIcon: 'fa-solid fa-bus' }
+        { id: '301', category: '景點', title: '九州自然動物園', desc: '預計搭乘「叢林巴士」近距離接觸野生動物', time: '09:00-16:30', ticket: '包含於團費', note: '若遇現場無法搭乘退費¥1000', transitTime: '30分', transitIcon: 'fa-solid fa-bus' },
+        { id: '302', category: '景點', title: '湯布院藝術小鎮', desc: '漫步於充滿浪漫氛圍的溫泉小鎮，特別贈送每人乙份醬油布丁', time: '全天開放', ticket: '免費散策', note: '午餐：湯布院蒸籠料理 (2500¥)', transitTime: '35分', transitIcon: 'fa-solid fa-bus' },
+        { id: '303', category: '景點', title: '金鱗湖森林小徑', desc: '欣賞湖光山色與夢幻仙境般的景色', time: '全天開放', ticket: '免費', note: '漫步於森林步道', transitTime: '10分', transitIcon: 'fa-solid fa-person-walking' },
+        { id: '304', category: '住宿', title: '福岡 蒙特埃馬納酒店 (Hotel Monte Hermana Fukuoka)', desc: '位於福岡市中心，專車前往福岡', time: '入住15:00後', ticket: '包含於團費', note: '晚餐：長腳蟹放題+酒水暢飲 (5500¥)', transitTime: '90分', transitIcon: 'fa-solid fa-bus' }
       ],
       [
-        { id: '401', category: '景點', title: '福岡巨蛋', desc: '日本職棒福岡軟銀鷹主場，外觀氣勢磅礡', time: '外觀開放', ticket: '免費', note: '外觀拍照留念', transitTime: '20分', transitIcon: 'fa-solid fa-bus' },
-        { id: '402', category: '景點', title: '福岡塔展望台', desc: '登頂日本最高海濱塔，360度俯瞰福岡市景與博多灣', time: '09:30-22:00', ticket: '包含於團費', note: '鳥瞰福岡美麗海岸線', transitTime: '10分', transitIcon: 'fa-solid fa-bus' },
-        { id: '403', category: '景點', title: '一蘭之森博物館', desc: '了解知名一蘭拉麵歷史脈絡並品嚐最道地豚骨拉麵', time: '10:00-16:00', ticket: '免費參觀', note: '午餐：日式拉麵餐 (1500¥)', transitTime: '30分', transitIcon: 'fa-solid fa-bus' },
-        { id: '404', category: '購物', title: '三井 LALAPORT', desc: '參觀 1:1 實體大巨型鋼彈模型，複合式商場自由購物', time: '10:00-21:00', ticket: '免費購物', note: '晚餐：日式燒肉放題 (3000¥)', transitTime: '25分', transitIcon: 'fa-solid fa-bus' }
+        { id: '401', category: '景點', title: '福岡巨蛋', desc: '外觀拍照留念', time: '外觀開放', ticket: '免費', note: '外觀拍照留念', transitTime: '20分', transitIcon: 'fa-solid fa-bus' },
+        { id: '402', category: '景點', title: '福岡塔展望台', desc: '登上日本最高海濱塔，俯瞰福岡市景與博多灣', time: '09:30-22:00', ticket: '包含於團費', note: '鳥瞰福岡美麗海岸線', transitTime: '10分', transitIcon: 'fa-solid fa-bus' },
+        { id: '403', category: '景點', title: '一蘭之森博物館', desc: '了解一蘭拉麵歷史並品嚐道地拉麵', time: '10:00-16:00', ticket: '免費參觀', note: '午餐：日式拉麵餐 (1500¥)', transitTime: '30分', transitIcon: 'fa-solid fa-bus' },
+        { id: '404', category: '購物', title: '免稅店', desc: '盡情選購日本伴手禮', time: '營業時間內', ticket: '免費', note: '採購在地特色商品', transitTime: '20分', transitIcon: 'fa-solid fa-bus' },
+        { id: '405', category: '購物', title: '三井 LALAPORT', desc: '參觀 1:1 巨型鋼彈模型，並於商場內自由購物', time: '10:00-21:00', ticket: '免費購物', note: '晚餐：日式燒肉放題 (3000¥)', transitTime: '25分', transitIcon: 'fa-solid fa-bus' }
       ],
       [
-        { id: '501', category: '景點', title: '太宰府天滿宮', desc: '祭祀日本學問之神菅原道真，贈送當地名物梅枝餅', time: '06:30-19:00', ticket: '免費參觀', note: '特別贈送梅枝餅乙個', transitTime: '30分', transitIcon: 'fa-solid fa-bus' },
-        { id: '502', category: '景點', title: '太宰府觀光列車', desc: '搭乘特色「旅人列車」，體驗獨特日式觀光風情', time: '依班次運行', ticket: '包含於團費', note: '若遇檢修運休改巴士並退費', transitTime: '15分', transitIcon: 'fa-solid fa-train' },
-        { id: '503', category: '景點', title: '柳川遊船', desc: '乘坐傳統木舟沿著護城河，體驗九州小威尼斯水鄉', time: '09:00-17:00', ticket: '包含於團費', note: '午餐：鰻魚飯定食 (2500¥)', transitTime: '45分', transitIcon: 'fa-solid fa-bus' }
+        { id: '501', category: '景點', title: '太宰府天滿宮', desc: '祭祀學問之神，特別贈送當地名物「梅枝餅」', time: '06:30-19:00', ticket: '免費參觀', note: '特別贈送梅枝餅乙個', transitTime: '30分', transitIcon: 'fa-solid fa-bus' },
+        { id: '502', category: '景點', title: '太宰府觀光列車 (旅人列車)', desc: '搭乘特色列車，體驗日式風情', time: '依班次運行', ticket: '包含於團費', note: '若遇檢修運休改巴士並退費大人¥200/小孩¥100', transitTime: '15分', transitIcon: 'fa-solid fa-train' },
+        { id: '503', category: '景點', title: '柳川遊船', desc: '乘坐小舟沿著護城河，體驗「九州小威尼斯」的水鄉風情', time: '09:00-17:00', ticket: '包含於團費', note: '午餐：鰻魚飯定食 (2500¥)', transitTime: '45分', transitIcon: 'fa-solid fa-bus' }
       ]
     ];
 
@@ -728,13 +731,13 @@
           { 
             day: 'Day 2', 
             name: '温泉杉乃井ホテル虹館', 
-            address: '日本〒874-0823 Oita, Beppu, 観海寺1', 
+            address: '日本〒874-0823 Oita, Beppu, 觀海寺1', 
             url: 'https://suginoi.orixhotelsandresorts.com/contents/nijikan/', 
             img: '温泉杉乃井ホテル虹館.jpg' 
           },
           { 
             day: 'Day 3 & Day 4', 
-            name: '福岡蒙特埃馬納酒店 (Hotel Monte Hermana Fukuoka)', 
+            name: '福岡 蒙特埃馬納酒店 (Hotel Monte Hermana Fukuoka)', 
             address: '3 Chome-4-24 Watanabedori, Chuo Ward, Fukuoka', 
             url: 'https://www.monte-hermana.jp/cn/fukuoka/', 
             img: '福岡蒙特埃馬納酒店.jpg' 
