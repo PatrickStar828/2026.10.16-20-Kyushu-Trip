@@ -608,6 +608,24 @@
     const db = firebase.database();
     const tripRef = db.ref('kyushu-trip-2026');
 
+    // 預設編輯密碼
+    const DEFAULT_PASSWORD = '0828';
+
+    // 編輯密碼驗證邏輯
+    const checkAuth = () => {
+      if (sessionStorage.getItem('isAuthorized') === 'true') {
+        return true;
+      }
+      const pass = prompt('請輸入編輯驗證密碼：');
+      if (pass === DEFAULT_PASSWORD) {
+        sessionStorage.setItem('isAuthorized', 'true');
+        return true;
+      } else {
+        alert('密碼錯誤！無法進行操作。');
+        return false;
+      }
+    };
+
     // 初始預設行程資料
     const defaultItineraries = [
       [
@@ -692,12 +710,14 @@
               itineraries.value = data.itineraries || defaultItineraries;
               shoppingList.value = data.shoppingList ? Object.values(data.shoppingList) : [];
               expenses.value = data.expenses ? Object.values(data.expenses) : [];
+              coupons.value = data.coupons ? Object.values(data.coupons) : [];
             } else {
-              // 初次連線若資料庫庫無資料，預載設值
+              // 初次連線若資料庫無資料，預設寫入
               tripRef.set({
                 itineraries: defaultItineraries,
                 shoppingList: defaultShopping,
-                expenses: defaultExpenses
+                expenses: defaultExpenses,
+                coupons: []
               });
             }
           });
@@ -709,10 +729,11 @@
                 Sortable.create(el, {
                   animation: 150,
                   onEnd: (evt) => {
+                    if (!checkAuth()) return;
                     const dayList = itineraries.value[selectedDayIndex.value];
                     const movedItem = dayList.splice(evt.oldIndex, 1)[0];
                     dayList.splice(evt.newIndex, 0, movedItem);
-                    saveItinerariesToFirebase();
+                    syncToFirebase();
                   }
                 });
               }
@@ -732,18 +753,20 @@
           return list.filter(item => item.category === filterCategory.value);
         });
 
-        // 行程 Modal
+        // 行程 Modal 相關
         const showModal = ref(false);
         const isEdit = ref(false);
         const modalForm = ref({ id: null, category: '景點', title: '', time: '', ticket: '', note: '' });
 
         const openAddModal = () => {
+          if (!checkAuth()) return;
           isEdit.value = false;
           modalForm.value = { id: 'item_' + Date.now(), category: '景點', title: '', time: '', ticket: '', note: '' };
           showModal.value = true;
         };
 
         const openEditModal = (item) => {
+          if (!checkAuth()) return;
           isEdit.value = true;
           modalForm.value = { ...item };
           showModal.value = true;
@@ -776,21 +799,26 @@
         const shoppingForm = ref({ id: null, name: '', price: 0, img: '' });
 
         const uploadCoupon = (e) => {
+          if (!checkAuth()) return;
           const file = e.target.files[0];
           if (file) {
             const reader = new FileReader();
             reader.onload = (evt) => {
-              coupons.value.push(evt.target.result);
+              const couponId = 'cpn_' + Date.now();
+              tripRef.child('coupons').child(couponId).set(evt.target.result);
             };
             reader.readAsDataURL(file);
           }
         };
 
         const removeCoupon = (idx) => {
-          coupons.value.splice(idx, 1);
+          if (!checkAuth()) return;
+          const couponKeys = Object.keys(coupons.value);
+          tripRef.child('coupons').child(couponKeys[idx]).remove();
         };
 
         const openAddShoppingModal = () => {
+          if (!checkAuth()) return;
           isShoppingEdit.value = false;
           shoppingForm.value = { id: 'shop_' + Date.now(), name: '', price: 0, img: '' };
           showShoppingModal.value = true;
@@ -827,6 +855,7 @@
         });
 
         const openAddExpenseModal = () => {
+          if (!checkAuth()) return;
           isExpenseEdit.value = false;
           expenseForm.value = {
             id: 'exp_' + Date.now(),
@@ -850,11 +879,12 @@
           showExpenseModal.value = false;
         };
 
-        // 長按 1 秒手勢邏輯
+        // 長按手勢發動 Modal 編輯
         let pressTimer = null;
         const startPress = (type, item) => {
           cancelPress();
           pressTimer = setTimeout(() => {
+            if (!checkAuth()) return;
             if (type === 'shopping') {
               isShoppingEdit.value = true;
               shoppingForm.value = { ...item };
