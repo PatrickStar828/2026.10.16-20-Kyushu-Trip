@@ -109,7 +109,6 @@
             :data-id="item.id"
             class="bg-white rounded-2xl p-4 border border-orange-100 app-card relative transition-all"
           >
-            <!-- 上景點至下景點交通時間與 Google 地圖規劃路線 -->
             <a 
               v-if="idx > 0" 
               :href="getRouteUrl(currentItinerary[idx - 1], item)"
@@ -161,14 +160,12 @@
                   <button @click="openEditModal(item)" class="text-gray-400 hover:text-brand-orange p-1">
                     <i class="fa-solid fa-pen-to-square"></i>
                   </button>
-                  <!-- 拖曳排序按鈕 -->
                   <button class="handle text-gray-400 hover:text-brand-orange p-1" title="按住並拉動以排序">
                     <i class="fa-solid fa-bars"></i>
                   </button>
                 </div>
               </div>
 
-              <!-- 左上角景點照片與特色簡述 -->
               <div class="flex gap-3 mt-1">
                 <div class="w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-orange-50 border border-orange-100">
                   <img 
@@ -310,18 +307,33 @@
         <!-- 各大商店 Coupon 區塊 -->
         <div class="bg-gradient-to-r from-amber-400 to-orange-400 p-4 rounded-2xl text-white shadow-sm">
           <div class="flex justify-between items-center mb-2">
-            <h3 class="font-bold text-sm flex items-center gap-1">
-              <i class="fa-solid fa-ticket"></i> 商店 Coupon 優惠券
-            </h3>
+            <div>
+              <h3 class="font-bold text-sm flex items-center gap-1">
+                <i class="fa-solid fa-ticket"></i> 商店 Coupon 優惠券
+              </h3>
+              <p class="text-[9px] opacity-80 mt-0.5">💡 長按卡片 1 秒可進行編輯/搜尋/刪除</p>
+            </div>
             <label class="bg-white text-brand-orange text-xs px-2.5 py-1 rounded-full font-bold cursor-pointer shadow active:scale-95 transition">
               + 上傳優惠券
               <input type="file" @change="uploadCoupon" class="hidden" accept="image/*">
             </label>
           </div>
           <div class="flex space-x-2 overflow-x-auto no-scrollbar py-1">
-            <div v-for="(coupon, idx) in coupons" :key="idx" class="w-24 h-16 bg-white/20 backdrop-blur rounded-lg flex-shrink-0 relative overflow-hidden border border-white/40 group">
-              <img :src="coupon" class="w-full h-full object-cover">
-              <button @click="removeCoupon(idx)" class="absolute top-1 right-1 bg-red-500/80 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center">×</button>
+            <div 
+              v-for="coupon in coupons" 
+              :key="coupon.id" 
+              @touchstart="startPress('coupon', coupon)"
+              @touchend="cancelPress"
+              @mousedown="startPress('coupon', coupon)"
+              @mouseup="cancelPress"
+              @mouseleave="cancelPress"
+              class="w-28 h-20 bg-white/20 backdrop-blur rounded-lg flex-shrink-0 relative overflow-hidden border border-white/40 group cursor-pointer active:scale-95 transition flex flex-col justify-end p-1.5"
+            >
+              <img :src="coupon.img" class="w-full h-full object-cover absolute inset-0 z-0">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-0"></div>
+              <span class="relative z-10 text-[10px] font-bold text-white truncate w-full">
+                {{ coupon.name || '優惠券' }}
+              </span>
             </div>
             <div v-if="coupons.length === 0" class="text-xs opacity-80 text-center w-full py-3">
               尚無優惠券，可點選右上角從手機上傳照片
@@ -559,6 +571,53 @@
       </div>
     </div>
 
+    <!-- Coupon 編輯 Modal -->
+    <div v-if="showCouponModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-3">
+        <h3 class="font-bold text-base text-gray-800">編輯商店 Coupon 優惠券</h3>
+        
+        <!-- 優惠券預覽圖 -->
+        <div class="w-full h-32 bg-gray-100 rounded-xl overflow-hidden relative flex items-center justify-center border border-gray-200">
+          <img v-if="couponForm.img" :src="couponForm.img" class="w-full h-full object-cover">
+          <span v-else class="text-xs text-gray-400">無圖片</span>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-gray-500">更換圖片</label>
+          <div class="mt-1">
+            <label class="bg-gray-100 border text-xs px-3 py-2 rounded-lg font-bold cursor-pointer inline-block">
+              選擇新照片
+              <input type="file" @change="handleCouponImgUpload" class="hidden" accept="image/*">
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-gray-500">優惠券 / 商店名稱</label>
+          <input v-model="couponForm.name" placeholder="例：Donki 唐吉訶德 優惠券" class="w-full text-xs border rounded-lg p-2 mt-1">
+        </div>
+
+        <!-- 透過網頁尋找按鈕 -->
+        <div>
+          <a 
+            :href="'https://www.google.com/search?q=' + encodeURIComponent((couponForm.name || '日本 優惠券') + ' coupon')" 
+            target="_blank"
+            class="w-full bg-brand-sky text-white text-xs py-2 rounded-lg font-bold flex items-center justify-center gap-1 shadow hover:bg-sky-500 transition"
+          >
+            <i class="fa-solid fa-magnifying-glass"></i> 透過網頁尋找相關優惠券
+          </a>
+        </div>
+
+        <div class="flex justify-between gap-2 pt-2 border-t border-gray-100">
+          <button @click="deleteCouponItem" class="bg-red-500 text-white text-xs px-3 py-2 rounded-lg font-bold">刪除</button>
+          <div class="flex gap-2 ml-auto">
+            <button @click="showCouponModal = false" class="bg-gray-200 text-gray-600 text-xs px-4 py-2 rounded-lg font-bold">取消</button>
+            <button @click="saveCouponItem" class="bg-brand-orange text-white text-xs px-4 py-2 rounded-lg font-bold">儲存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 花費記帳 Modal -->
     <div v-if="showExpenseModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-3">
@@ -621,7 +680,6 @@
   </div>
 
   <script>
-    // 單一裝置本機儲存（取代原本的 Firebase 即時資料庫）
     const LOCAL_STORAGE_KEY = 'kyushu-trip-2026';
 
     const loadLocalData = () => {
@@ -642,10 +700,8 @@
       }
     };
 
-    // 預設編輯密碼
     const DEFAULT_PASSWORD = '0828';
 
-    // 編輯密碼驗證邏輯
     const checkAuth = () => {
       if (sessionStorage.getItem('isAuthorized') === 'true') {
         return true;
@@ -660,7 +716,6 @@
       }
     };
 
-    // 依據新附件檔案更新 Day 2 行程與餐點資訊
     const defaultItineraries = [
       [
         { id: '101', category: '航班', title: '星宇航空 JX316 飛往熊本', desc: '搭乘星宇航空由台中直飛熊本空港', time: '15:00-18:15', ticket: '包含於團費', note: '晚餐：日式餐盒', transitTime: '', transitIcon: '' },
@@ -770,14 +825,27 @@
           });
         };
 
-        // 本機資料讀取與初始化
         onMounted(() => {
           const data = loadLocalData();
           if (data) {
             itineraries.value = data.itineraries || defaultItineraries;
             shoppingList.value = data.shoppingList || [];
             expenses.value = data.expenses || [];
-            coupons.value = data.coupons || [];
+            
+            // 兼容舊格式（純字串陣列）轉成新格式（物件陣列）
+            if (data.coupons && data.coupons.length > 0) {
+              if (typeof data.coupons[0] === 'string') {
+                coupons.value = data.coupons.map((cStr, idx) => ({
+                  id: 'cpn_' + Date.now() + '_' + idx,
+                  name: '優惠券 ' + (idx + 1),
+                  img: cStr
+                }));
+              } else {
+                coupons.value = data.coupons;
+              }
+            } else {
+              coupons.value = [];
+            }
           } else {
             itineraries.value = defaultItineraries;
             saveAllToLocal();
@@ -785,7 +853,6 @@
           initSortable();
         });
 
-        // 將目前所有資料整包寫入 localStorage
         const saveAllToLocal = () => {
           saveLocalData({
             itineraries: itineraries.value,
@@ -796,7 +863,6 @@
         };
 
         const currentDay = computed(() => days[selectedDayIndex.value]);
-
         const currentItinerary = computed(() => itineraries.value[selectedDayIndex.value] || []);
 
         const getRouteUrl = (fromItem, toItem) => {
@@ -872,23 +938,54 @@
         const isShoppingEdit = ref(false);
         const shoppingForm = ref({ id: null, name: '', price: 0, img: '' });
 
+        // Coupon 編輯相關
+        const showCouponModal = ref(false);
+        const couponForm = ref({ id: null, name: '', img: '' });
+
         const uploadCoupon = (e) => {
           if (!checkAuth()) return;
           const file = e.target.files[0];
           if (file) {
             const reader = new FileReader();
             reader.onload = (evt) => {
-              coupons.value.push(evt.target.result);
+              coupons.value.push({
+                id: 'cpn_' + Date.now(),
+                name: '新優惠券',
+                img: evt.target.result
+              });
               saveAllToLocal();
             };
             reader.readAsDataURL(file);
           }
         };
 
-        const removeCoupon = (idx) => {
-          if (!checkAuth()) return;
-          coupons.value.splice(idx, 1);
-          saveAllToLocal();
+        const handleCouponImgUpload = (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              couponForm.value.img = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        };
+
+        const saveCouponItem = () => {
+          const idx = coupons.value.findIndex(c => c.id === couponForm.value.id);
+          if (idx !== -1) {
+            coupons.value[idx] = { ...couponForm.value };
+            saveAllToLocal();
+          }
+          showCouponModal.value = false;
+        };
+
+        const deleteCouponItem = () => {
+          if (confirm('確定要刪除這張優惠券嗎？')) {
+            const idx = coupons.value.findIndex(c => c.id === couponForm.value.id);
+            if (idx !== -1) coupons.value.splice(idx, 1);
+            saveAllToLocal();
+            showCouponModal.value = false;
+          }
         };
 
         const openAddShoppingModal = () => {
@@ -975,7 +1072,10 @@
           cancelPress();
           pressTimer = setTimeout(() => {
             if (!checkAuth()) return;
-            if (type === 'shopping') {
+            if (type === 'coupon') {
+              couponForm.value = { ...item };
+              showCouponModal.value = true;
+            } else if (type === 'shopping') {
               isShoppingEdit.value = true;
               shoppingForm.value = { ...item };
               showShoppingModal.value = true;
@@ -1022,9 +1122,13 @@
           saveItinerary,
           confirmDeleteItinerary,
           coupons,
-          shoppingList,
           uploadCoupon,
-          removeCoupon,
+          showCouponModal,
+          couponForm,
+          handleCouponImgUpload,
+          saveCouponItem,
+          deleteCouponItem,
+          shoppingList,
           showShoppingModal,
           isShoppingEdit,
           shoppingForm,
