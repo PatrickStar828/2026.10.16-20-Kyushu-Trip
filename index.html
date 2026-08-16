@@ -73,6 +73,7 @@
 
       <!-- ================= 頁面 1: 每日行程表 ================= -->
       <section v-if="currentTab === 'itinerary'">
+        <!-- 日期選擇頁籤 -->
         <div class="flex space-x-3 overflow-x-auto no-scrollbar py-2 mb-4">
           <button 
             v-for="(day, index) in days" 
@@ -86,23 +87,30 @@
           </button>
         </div>
 
-        <div class="bg-gradient-to-r from-brand-skyLight to-white rounded-2xl p-4 mb-4 border border-sky-200 flex items-center justify-between shadow-sm">
-          <div class="flex items-center space-x-3">
-            <div class="text-3xl text-yellow-500 animate-bounce">
-              <i :class="currentWeather.icon"></i>
-            </div>
-            <div>
-              <div class="text-sm font-bold text-gray-700">{{ currentDay.location }}當日天氣</div>
-              <div class="text-xs text-gray-500">{{ currentWeather.condition }}</div>
-            </div>
-          </div>
-          <div class="text-right">
-            <div class="text-xl font-black text-brand-orangeDark">{{ currentWeather.temp }}°C</div>
-            <div class="text-xs text-gray-400">體感 {{ currentWeather.feelsLike }}°C</div>
-          </div>
-        </div>
-
+        <!-- 每日行程列表 -->
         <div id="itinerary-list" class="space-y-3">
+          
+          <!-- (10) 天氣資訊：呈現於每日行程表中第一個行程上方 -->
+          <div class="bg-gradient-to-r from-brand-skyLight to-white rounded-2xl p-4 mb-3 border border-sky-200 flex items-center justify-between shadow-sm">
+            <div class="flex items-center space-x-3">
+              <div class="text-3xl text-yellow-500 animate-bounce">
+                <i :class="currentWeather.icon"></i>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-gray-700">{{ currentDay.location }}當日天氣</div>
+                <div class="text-xs text-gray-500 flex items-center gap-2">
+                  <span>{{ currentWeather.condition }}</span>
+                  <span class="text-blue-500 font-bold"><i class="fa-solid fa-umbrella text-[10px]"></i> 降雨機率 {{ currentWeather.pop }}%</span>
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-xl font-black text-brand-orangeDark">{{ currentWeather.temp }}°C</div>
+              <div class="text-xs text-gray-400">體感 {{ currentWeather.feelsLike }}°C</div>
+            </div>
+          </div>
+
+          <!-- 行程項目卡片 -->
           <div 
             v-for="(item, idx) in currentItinerary" 
             :key="item.id" 
@@ -210,8 +218,9 @@
         </button>
       </section>
 
-      <!-- ================= 頁面 2: 航班 & 住宿資訊 ================= -->
+      <!-- ================= 頁面 2: 航班 & 每日住宿資訊 ================= -->
       <section v-if="currentTab === 'info'" class="space-y-6">
+        <!-- 航班資訊 -->
         <div class="bg-slate-800 text-white rounded-2xl p-5 shadow-lg border border-slate-700">
           <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
             <h2 class="font-extrabold text-base flex items-center gap-2 text-amber-400">
@@ -265,6 +274,7 @@
           </div>
         </div>
 
+        <!-- 每日住宿資訊 -->
         <div class="space-y-4">
           <h2 class="font-black text-lg text-brand-orangeDark flex items-center gap-2">
             <i class="fa-solid fa-hotel"></i> 每日住宿資訊
@@ -286,19 +296,7 @@
           </div>
         </div>
 
-        <div class="bg-red-50 rounded-2xl p-4 border border-red-200">
-          <h3 class="text-red-600 font-bold text-sm mb-2 flex items-center gap-1">
-            <i class="fa-solid fa-kit-medical"></i> 日本緊急求助電話
-          </h3>
-          <div class="flex justify-around text-center text-xs font-bold text-red-700">
-            <div class="bg-white px-4 py-2 rounded-xl shadow-sm border border-red-100">
-              警察局：<span class="text-base text-red-600">110</span>
-            </div>
-            <div class="bg-white px-4 py-2 rounded-xl shadow-sm border border-red-100">
-              救護車：<span class="text-base text-red-600">119</span>
-            </div>
-          </div>
-        </div>
+        <!-- 緊急醫療(警察、救護車) 已依需求移除 -->
       </section>
 
       <!-- ================= 頁面 3: 購物清單 ================= -->
@@ -765,13 +763,14 @@
           { week: '二', date: '10/20', location: '太宰府' }
         ];
 
+        // 包含圖示、天氣狀況、氣溫、體感溫度、下雨機率
         const currentWeather = computed(() => {
           const weathers = [
-            { icon: 'fa-solid fa-sun', condition: '晴朗', temp: 22, feelsLike: 23 },
-            { icon: 'fa-solid fa-cloud-sun', condition: '多雲時晴', temp: 20, feelsLike: 20 },
-            { icon: 'fa-solid fa-cloud', condition: '陰天', temp: 19, feelsLike: 18 },
-            { icon: 'fa-solid fa-cloud-rain', condition: '短暫雨', temp: 17, feelsLike: 16 },
-            { icon: 'fa-solid fa-sun', condition: '晴朗', temp: 21, feelsLike: 22 }
+            { icon: 'fa-solid fa-sun', condition: '晴朗', temp: 22, feelsLike: 23, pop: 10 },
+            { icon: 'fa-solid fa-cloud-sun', condition: '多雲時晴', temp: 20, feelsLike: 20, pop: 20 },
+            { icon: 'fa-solid fa-cloud', condition: '陰天', temp: 19, feelsLike: 18, pop: 30 },
+            { icon: 'fa-solid fa-cloud-rain', condition: '短暫雨', temp: 17, feelsLike: 16, pop: 70 },
+            { icon: 'fa-solid fa-sun', condition: '晴朗', temp: 21, feelsLike: 22, pop: 10 }
           ];
           return weathers[selectedDayIndex.value];
         });
@@ -813,12 +812,18 @@
               el._sortable = Sortable.create(el, {
                 animation: 150,
                 handle: '.handle',
+                draggable: '.app-card', // 僅對行程卡片進行拖曳排序
                 onEnd: (evt) => {
                   if (!checkAuth()) return;
                   const dayList = itineraries.value[selectedDayIndex.value];
-                  const movedItem = dayList.splice(evt.oldIndex, 1)[0];
-                  dayList.splice(evt.newIndex, 0, movedItem);
-                  saveAllToLocal();
+                  // 扣除天氣區塊所佔據的位置偏移
+                  const oldIdx = evt.oldIndex - 1;
+                  const newIdx = evt.newIndex - 1;
+                  if (oldIdx >= 0 && newIdx >= 0) {
+                    const movedItem = dayList.splice(oldIdx, 1)[0];
+                    dayList.splice(newIdx, 0, movedItem);
+                    saveAllToLocal();
+                  }
                 }
               });
             }
@@ -832,7 +837,6 @@
             shoppingList.value = data.shoppingList || [];
             expenses.value = data.expenses || [];
             
-            // 兼容舊格式（純字串陣列）轉成新格式（物件陣列）
             if (data.coupons && data.coupons.length > 0) {
               if (typeof data.coupons[0] === 'string') {
                 coupons.value = data.coupons.map((cStr, idx) => ({
