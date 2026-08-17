@@ -73,7 +73,6 @@
 
       <!-- ================= 頁面 1: 每日行程表 ================= -->
       <section v-if="currentTab === 'itinerary'">
-        <!-- 日期選擇頁籤 -->
         <div class="flex space-x-3 overflow-x-auto no-scrollbar py-2 mb-4">
           <button 
             v-for="(day, index) in days" 
@@ -87,30 +86,23 @@
           </button>
         </div>
 
-        <!-- 每日行程列表 -->
-        <div id="itinerary-list" class="space-y-3">
-          
-          <!-- (10) 天氣資訊：呈現於每日行程表中第一個行程上方 -->
-          <div class="bg-gradient-to-r from-brand-skyLight to-white rounded-2xl p-4 mb-3 border border-sky-200 flex items-center justify-between shadow-sm">
-            <div class="flex items-center space-x-3">
-              <div class="text-3xl text-yellow-500 animate-bounce">
-                <i :class="currentWeather.icon"></i>
-              </div>
-              <div>
-                <div class="text-sm font-bold text-gray-700">{{ currentDay.location }}當日天氣</div>
-                <div class="text-xs text-gray-500 flex items-center gap-2">
-                  <span>{{ currentWeather.condition }}</span>
-                  <span class="text-blue-500 font-bold"><i class="fa-solid fa-umbrella text-[10px]"></i> 降雨機率 {{ currentWeather.pop }}%</span>
-                </div>
-              </div>
+        <div class="bg-gradient-to-r from-brand-skyLight to-white rounded-2xl p-4 mb-4 border border-sky-200 flex items-center justify-between shadow-sm">
+          <div class="flex items-center space-x-3">
+            <div class="text-3xl text-yellow-500 animate-bounce">
+              <i :class="currentWeather.icon"></i>
             </div>
-            <div class="text-right">
-              <div class="text-xl font-black text-brand-orangeDark">{{ currentWeather.temp }}°C</div>
-              <div class="text-xs text-gray-400">體感 {{ currentWeather.feelsLike }}°C</div>
+            <div>
+              <div class="text-sm font-bold text-gray-700">{{ currentDay.location }}當日天氣</div>
+              <div class="text-xs text-gray-500">{{ currentWeather.condition }}</div>
             </div>
           </div>
+          <div class="text-right">
+            <div class="text-xl font-black text-brand-orangeDark">{{ currentWeather.temp }}°C</div>
+            <div class="text-xs text-gray-400">體感 {{ currentWeather.feelsLike }}°C</div>
+          </div>
+        </div>
 
-          <!-- 行程項目卡片 -->
+        <div id="itinerary-list" class="space-y-3">
           <div 
             v-for="(item, idx) in currentItinerary" 
             :key="item.id" 
@@ -218,10 +210,17 @@
         </button>
       </section>
 
-      <!-- ================= 頁面 2: 航班 & 每日住宿資訊 ================= -->
+      <!-- ================= 頁面 2: 航班 & 住宿資訊 ================= -->
       <section v-if="currentTab === 'info'" class="space-y-6">
-        <!-- 航班資訊 -->
-        <div class="bg-slate-800 text-white rounded-2xl p-5 shadow-lg border border-slate-700">
+        <div 
+          @touchstart="startFlightPress"
+          @touchend="cancelFlightPress"
+          @mousedown="startFlightPress"
+          @mouseup="cancelFlightPress"
+          @mouseleave="cancelFlightPress"
+          class="bg-slate-800 text-white rounded-2xl p-5 shadow-lg border border-slate-700 cursor-pointer active:opacity-90 transition relative group"
+        >
+          <div class="absolute top-2 right-3 text-[10px] text-amber-400 opacity-60">💡 長按卡片2秒開啟即時動態</div>
           <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
             <h2 class="font-extrabold text-base flex items-center gap-2 text-amber-400">
               <i class="fa-solid fa-plane-departure"></i> 航班資訊
@@ -274,7 +273,6 @@
           </div>
         </div>
 
-        <!-- 每日住宿資訊 -->
         <div class="space-y-4">
           <h2 class="font-black text-lg text-brand-orangeDark flex items-center gap-2">
             <i class="fa-solid fa-hotel"></i> 每日住宿資訊
@@ -296,7 +294,19 @@
           </div>
         </div>
 
-        <!-- 緊急醫療(警察、救護車) 已依需求移除 -->
+        <div class="bg-red-50 rounded-2xl p-4 border border-red-200">
+          <h3 class="text-red-600 font-bold text-sm mb-2 flex items-center gap-1">
+            <i class="fa-solid fa-kit-medical"></i> 日本緊急求助電話
+          </h3>
+          <div class="flex justify-around text-center text-xs font-bold text-red-700">
+            <div class="bg-white px-4 py-2 rounded-xl shadow-sm border border-red-100">
+              警察局：<span class="text-base text-red-600">110</span>
+            </div>
+            <div class="bg-white px-4 py-2 rounded-xl shadow-sm border border-red-100">
+              救護車：<span class="text-base text-red-600">119</span>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- ================= 頁面 3: 購物清單 ================= -->
@@ -391,7 +401,7 @@
         <div class="bg-gradient-to-br from-brand-grassLight to-white p-4 rounded-2xl border border-green-200 shadow-sm space-y-3">
           <div class="flex justify-between items-center">
             <span class="text-xs font-extrabold text-green-800 flex items-center gap-1">
-              <i class="fa-solid fa-calculator"></i> 即時匯率換算
+              <i class="fa-solid fa-calculator"></i> 即時市場牌告匯率換算
             </span>
             <span class="text-[10px] text-green-600 bg-white px-2 py-0.5 rounded-full border border-green-200 font-bold">
               1 JPY ≈ {{ exchangeRate }} TWD
@@ -641,7 +651,9 @@
         <div>
           <label class="text-xs font-bold text-gray-500">日期</label>
           <select v-model="expenseForm.date" class="w-full text-xs border rounded-lg p-2 mt-1">
-            <option v-for="d in days" :key="d.date" :value="d.date">{{ d.date }} ({{ d.week }}) - {{ d.location }}</option>
+            <option v-for="d in days" :key="d.dateFormatted" :value="d.dateFormatted">
+              {{ d.dateFormatted }} - {{ d.location }}
+            </option>
           </select>
         </div>
 
@@ -698,22 +710,6 @@
       }
     };
 
-    const DEFAULT_PASSWORD = '0828';
-
-    const checkAuth = () => {
-      if (sessionStorage.getItem('isAuthorized') === 'true') {
-        return true;
-      }
-      const pass = prompt('請輸入編輯驗證密碼：');
-      if (pass === DEFAULT_PASSWORD) {
-        sessionStorage.setItem('isAuthorized', 'true');
-        return true;
-      } else {
-        alert('密碼錯誤！無法進行操作。');
-        return false;
-      }
-    };
-
     const defaultItineraries = [
       [
         { id: '101', category: '航班', title: '星宇航空 JX316 飛往熊本', desc: '搭乘星宇航空由台中直飛熊本空港', time: '15:00-18:15', ticket: '包含於團費', note: '晚餐：日式餐盒', transitTime: '', transitIcon: '' },
@@ -755,22 +751,35 @@
         const exchangeRate = ref(0.215);
         const calcJpy = ref('');
 
+        // 新增/調整日期格式：包含月/日(星期)
         const days = [
-          { week: '五', date: '10/16', location: '熊本' },
-          { week: '六', date: '10/17', location: '別府' },
-          { week: '日', date: '10/18', location: '福岡' },
-          { week: '一', date: '10/19', location: '福岡' },
-          { week: '二', date: '10/20', location: '太宰府' }
+          { week: '五', date: '10/16', dateFormatted: '10/16(五)', location: '熊本' },
+          { week: '六', date: '10/17', dateFormatted: '10/17(六)', location: '別府' },
+          { week: '日', date: '10/18', dateFormatted: '10/18(日)', location: '福岡' },
+          { week: '一', date: '10/19', dateFormatted: '10/19(一)', location: '福岡' },
+          { week: '二', date: '10/20', dateFormatted: '10/20(二)', location: '太宰府' }
         ];
 
-        // 包含圖示、天氣狀況、氣溫、體感溫度、下雨機率
+        // 抓取即時牌告匯率 API
+        const fetchRealTimeExchangeRate = async () => {
+          try {
+            const res = await fetch('https://open.er-api.com/v6/latest/JPY');
+            const data = await res.json();
+            if (data && data.rates && data.rates.TWD) {
+              exchangeRate.value = parseFloat(data.rates.TWD.toFixed(4));
+            }
+          } catch (e) {
+            console.error('即時匯率取得失敗，使用預設匯率', e);
+          }
+        };
+
         const currentWeather = computed(() => {
           const weathers = [
-            { icon: 'fa-solid fa-sun', condition: '晴朗', temp: 22, feelsLike: 23, pop: 10 },
-            { icon: 'fa-solid fa-cloud-sun', condition: '多雲時晴', temp: 20, feelsLike: 20, pop: 20 },
-            { icon: 'fa-solid fa-cloud', condition: '陰天', temp: 19, feelsLike: 18, pop: 30 },
-            { icon: 'fa-solid fa-cloud-rain', condition: '短暫雨', temp: 17, feelsLike: 16, pop: 70 },
-            { icon: 'fa-solid fa-sun', condition: '晴朗', temp: 21, feelsLike: 22, pop: 10 }
+            { icon: 'fa-solid fa-sun', condition: '晴朗', temp: 22, feelsLike: 23 },
+            { icon: 'fa-solid fa-cloud-sun', condition: '多雲時晴', temp: 20, feelsLike: 20 },
+            { icon: 'fa-solid fa-cloud', condition: '陰天', temp: 19, feelsLike: 18 },
+            { icon: 'fa-solid fa-cloud-rain', condition: '短暫雨', temp: 17, feelsLike: 16 },
+            { icon: 'fa-solid fa-sun', condition: '晴朗', temp: 21, feelsLike: 22 }
           ];
           return weathers[selectedDayIndex.value];
         });
@@ -812,18 +821,11 @@
               el._sortable = Sortable.create(el, {
                 animation: 150,
                 handle: '.handle',
-                draggable: '.app-card', // 僅對行程卡片進行拖曳排序
                 onEnd: (evt) => {
-                  if (!checkAuth()) return;
                   const dayList = itineraries.value[selectedDayIndex.value];
-                  // 扣除天氣區塊所佔據的位置偏移
-                  const oldIdx = evt.oldIndex - 1;
-                  const newIdx = evt.newIndex - 1;
-                  if (oldIdx >= 0 && newIdx >= 0) {
-                    const movedItem = dayList.splice(oldIdx, 1)[0];
-                    dayList.splice(newIdx, 0, movedItem);
-                    saveAllToLocal();
-                  }
+                  const movedItem = dayList.splice(evt.oldIndex, 1)[0];
+                  dayList.splice(evt.newIndex, 0, movedItem);
+                  saveAllToLocal();
                 }
               });
             }
@@ -831,6 +833,7 @@
         };
 
         onMounted(() => {
+          fetchRealTimeExchangeRate();
           const data = loadLocalData();
           if (data) {
             itineraries.value = data.itineraries || defaultItineraries;
@@ -903,14 +906,12 @@
         const modalForm = ref({ id: null, category: '景點', title: '', desc: '', time: '', ticket: '', note: '' });
 
         const openAddModal = () => {
-          if (!checkAuth()) return;
           isEdit.value = false;
           modalForm.value = { id: 'item_' + Date.now(), category: '景點', title: '', desc: '', time: '', ticket: '', note: '' };
           showModal.value = true;
         };
 
         const openEditModal = (item) => {
-          if (!checkAuth()) return;
           isEdit.value = true;
           modalForm.value = { ...item };
           showModal.value = true;
@@ -947,7 +948,6 @@
         const couponForm = ref({ id: null, name: '', img: '' });
 
         const uploadCoupon = (e) => {
-          if (!checkAuth()) return;
           const file = e.target.files[0];
           if (file) {
             const reader = new FileReader();
@@ -993,7 +993,6 @@
         };
 
         const openAddShoppingModal = () => {
-          if (!checkAuth()) return;
           isShoppingEdit.value = false;
           shoppingForm.value = { id: 'shop_' + Date.now(), name: '', price: 0, img: '' };
           showShoppingModal.value = true;
@@ -1031,20 +1030,19 @@
         // 記帳相關
         const showExpenseModal = ref(false);
         const isExpenseEdit = ref(false);
-        const expenseForm = ref({ id: null, category: '飲食', name: '', date: '10/16', amount: 0, payment: '現金', note: '' });
+        const expenseForm = ref({ id: null, category: '飲食', name: '', date: '10/16(五)', amount: 0, payment: '現金', note: '' });
 
         const totalExpensesJpy = computed(() => {
           return expenses.value.reduce((sum, item) => sum + Number(item.amount || 0), 0);
         });
 
         const openAddExpenseModal = () => {
-          if (!checkAuth()) return;
           isExpenseEdit.value = false;
           expenseForm.value = {
             id: 'exp_' + Date.now(),
             category: '飲食',
             name: '',
-            date: days[selectedDayIndex.value].date,
+            date: days[selectedDayIndex.value].dateFormatted,
             amount: '',
             payment: '現金',
             note: ''
@@ -1075,7 +1073,6 @@
         const startPress = (type, item) => {
           cancelPress();
           pressTimer = setTimeout(() => {
-            if (!checkAuth()) return;
             if (type === 'coupon') {
               couponForm.value = { ...item };
               showCouponModal.value = true;
@@ -1095,6 +1092,22 @@
           if (pressTimer) {
             clearTimeout(pressTimer);
             pressTimer = null;
+          }
+        };
+
+        // 航班資訊卡片長按 2 秒跳轉事件
+        let flightPressTimer = null;
+        const startFlightPress = () => {
+          cancelFlightPress();
+          flightPressTimer = setTimeout(() => {
+            window.open('https://www.flightradar24.com/24.36,121.15/8', '_blank');
+          }, 2000);
+        };
+
+        const cancelFlightPress = () => {
+          if (flightPressTimer) {
+            clearTimeout(flightPressTimer);
+            flightPressTimer = null;
           }
         };
 
@@ -1152,6 +1165,8 @@
           deleteExpenseRecord,
           startPress,
           cancelPress,
+          startFlightPress,
+          cancelFlightPress,
           getCategoryBadgeClass
         }
       }
