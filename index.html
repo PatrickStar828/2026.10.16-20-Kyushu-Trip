@@ -450,20 +450,28 @@
             @mousedown="startPress('expense', record)"
             @mouseup="cancelPress"
             @mouseleave="cancelPress"
-            class="bg-white p-3 rounded-xl border border-orange-100 flex justify-between items-center shadow-sm cursor-pointer active:bg-orange-50/50 transition"
+            class="bg-white p-3 rounded-xl border border-orange-100 flex justify-between items-center shadow-sm cursor-pointer active:bg-orange-50/50 transition gap-3"
           >
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] bg-orange-100 text-brand-orangeDark font-bold px-1.5 py-0.5 rounded">
-                  {{ record.category }}
-                </span>
-                <span class="font-bold text-xs text-gray-800">{{ record.name }}</span>
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <!-- 左上角/左側圖片顯示區塊 -->
+              <div v-if="record.img" class="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden border border-orange-100 bg-orange-50">
+                <img :src="record.img" class="w-full h-full object-cover">
               </div>
-              <div class="text-[10px] text-gray-400 mt-1">
-                {{ record.date }} · {{ record.payment }} {{ record.note ? '· ' + record.note : '' }}
+
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] bg-orange-100 text-brand-orangeDark font-bold px-1.5 py-0.5 rounded flex-shrink-0">
+                    {{ record.category }}
+                  </span>
+                  <span class="font-bold text-xs text-gray-800 truncate">{{ record.name }}</span>
+                </div>
+                <div class="text-[10px] text-gray-400 mt-1 truncate">
+                  {{ record.date }} · {{ record.payment }} {{ record.note ? '· ' + record.note : '' }}
+                </div>
               </div>
             </div>
-            <div class="text-right">
+
+            <div class="text-right flex-shrink-0">
               <div class="font-black text-sm text-gray-800">¥ {{ Number(record.amount).toLocaleString() }}</div>
               <div class="text-[10px] text-gray-400">${{ Math.round(record.amount * exchangeRate) }}</div>
             </div>
@@ -628,11 +636,27 @@
       </div>
     </div>
 
-    <!-- 花費記帳 Modal -->
+    <!-- 花費記帳 Modal (包含相機 ICON 上傳照片按鈕) -->
     <div v-if="showExpenseModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-3">
         <h3 class="font-bold text-base text-gray-800">{{ isExpenseEdit ? '編輯花費紀錄' : '新增花費紀錄' }}</h3>
         
+        <!-- 圖片預覽與上傳相機按鈕 -->
+        <div>
+          <label class="text-xs font-bold text-gray-500">單據 / 收據照片</label>
+          <div class="mt-1 flex items-center gap-3">
+            <label class="w-12 h-12 rounded-xl bg-orange-50 border border-brand-orange text-brand-orange flex items-center justify-center cursor-pointer hover:bg-orange-100 active:scale-95 transition shadow-sm">
+              <i class="fa-solid fa-camera text-lg"></i>
+              <input type="file" @change="handleExpenseImgUpload" class="hidden" accept="image/*">
+            </label>
+            <div v-if="expenseForm.img" class="w-12 h-12 rounded-xl overflow-hidden border border-gray-200 relative">
+              <img :src="expenseForm.img" class="w-full h-full object-cover">
+              <button @click="expenseForm.img = ''" class="absolute top-0 right-0 bg-red-500 text-white text-[9px] w-4 h-4 rounded-bl flex items-center justify-center">×</button>
+            </div>
+            <span class="text-xs text-gray-400" v-else>點擊相機圖示拍照或上傳圖片</span>
+          </div>
+        </div>
+
         <div>
           <label class="text-xs font-bold text-gray-500">類別</label>
           <select v-model="expenseForm.category" class="w-full text-xs border rounded-lg p-2 mt-1">
@@ -1026,7 +1050,7 @@
 
         const showExpenseModal = ref(false);
         const isExpenseEdit = ref(false);
-        const expenseForm = ref({ id: null, category: '飲食', name: '', date: '10/16(五)', amount: 0, payment: '現金', note: '' });
+        const expenseForm = ref({ id: null, category: '飲食', name: '', date: '10/16(五)', amount: 0, payment: '現金', note: '', img: '' });
 
         const totalExpensesJpy = computed(() => {
           return expenses.value.reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -1041,9 +1065,21 @@
             date: days[selectedDayIndex.value].dateFormatted,
             amount: '',
             payment: '現金',
-            note: ''
+            note: '',
+            img: ''
           };
           showExpenseModal.value = true;
+        };
+
+        const handleExpenseImgUpload = (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              expenseForm.value.img = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
         };
 
         const saveExpenseRecord = () => {
@@ -1090,7 +1126,7 @@
           }
         };
 
-        // 航班資訊卡片長按邏輯 (長按 2 秒並於新分頁開啟)[cite: 9]
+        // 航班資訊卡片長按邏輯 (長按 2 秒並於新分頁開啟)
         let flightPressTimer = null;
         const startFlightPress = () => {
           cancelFlightPress();
@@ -1156,6 +1192,7 @@
           isExpenseEdit,
           expenseForm,
           openAddExpenseModal,
+          handleExpenseImgUpload,
           saveExpenseRecord,
           deleteExpenseRecord,
           startPress,
