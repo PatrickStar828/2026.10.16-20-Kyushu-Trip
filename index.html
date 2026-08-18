@@ -40,7 +40,6 @@
     body {
       background-color: #FFF8F0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      /* 已移除 user-select: none，避免影響長按觸發機制 */
     }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -211,7 +210,6 @@
 
       <!-- ================= 頁面 2: 航班 & 住宿資訊 ================= -->
       <section v-if="currentTab === 'info'" class="space-y-6">
-        <!-- 修正處：加入 @touchcancel 並優化點擊觸發機制 -->
         <div 
           @touchstart="startFlightPress"
           @touchend="cancelFlightPress"
@@ -1092,14 +1090,13 @@
           }
         };
 
-        // 修正後的航班資訊卡片長按邏輯
+        // 航班資訊卡片長按邏輯 (長按 2 秒並於新分頁開啟)[cite: 9]
         let flightPressTimer = null;
         const startFlightPress = () => {
           cancelFlightPress();
           flightPressTimer = setTimeout(() => {
-            // 在手機端改用直接轉址，避免被彈出式視窗攔截器阻擋
-            window.location.href = 'https://www.flightradar24.com/24.36,121.15/8';
-          }, 1500); // 縮減長按判定時間至 1.5 秒提高體驗
+            window.open('https://www.flightradar24.com/24.36,121.15/8', '_blank');
+          }, 2000);
         };
 
         const cancelFlightPress = () => {
